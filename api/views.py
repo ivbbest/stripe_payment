@@ -12,7 +12,12 @@ import stripe
 stripe.api_key = STRIPE_SECRET_KEY
 
 
-class ItemView(APIView):
+class BuyItemView(APIView):
+    """
+    Добавление товаров и получение товаров.
+    Добавление работает через post.
+    Получение через get.
+    """
     def post(self, request):
         serializer = ItemSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
@@ -50,7 +55,7 @@ class ItemView(APIView):
                         'name': item.name,
                         'description': item.description
                     },
-                    'unit_amount': item.price,
+                    'unit_amount': item.price*100,
                 },
                 'quantity': 1,
             }],
@@ -62,3 +67,17 @@ class ItemView(APIView):
         data = {'session_id': session.id}
 
         return Response(status=status.HTTP_200_OK, data=data)
+
+
+class ItemView(APIView):
+    """
+    Получение ростейшей HTML страницы, на которой будет информация
+    о выбранном Item и кнопка Buy.
+    По нажатию на кнопку Buy должен происходить запрос на /buy/{id},
+    получение session_id и далее  с помощью JS библиотеки Stripe
+    происходить редирект на Checkout форму.
+    """
+    def get(self, request, pk):
+        item = Item.objects.get(pk=pk)
+
+        return render(request, 'api/buy_item.html', {'item': item})
